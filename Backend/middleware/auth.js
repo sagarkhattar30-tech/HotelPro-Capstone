@@ -2,11 +2,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 const getJwtSecret = () => {
-  const secret = process.env.JWT_SECRET;
-  if (!secret && process.env.NODE_ENV === 'production') {
-    throw new Error('FATAL: JWT_SECRET environment variable must be set in production');
-  }
-  return secret || 'hotelpro_signature_luxury_jwt_secret_2026_capstone_secure';
+  return process.env.JWT_SECRET || 'hotelpro_signature_luxury_jwt_secret_2026_capstone_secure';
 };
 
 const protect = async (req, res, next) => {
