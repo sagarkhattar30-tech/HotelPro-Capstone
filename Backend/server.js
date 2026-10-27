@@ -53,7 +53,7 @@ app.use(
         return callback(null, true);
       }
 
-      if (allowedOrigins.includes(origin)) {
+      if (allowedOrigins.includes(origin) || (origin && origin.endsWith('.vercel.app')) || allowedOrigins.includes('*')) {
         return callback(null, true);
       }
 
@@ -155,7 +155,7 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`🏨 HotelPro Server running on http://localhost:${PORT}`);
   });
