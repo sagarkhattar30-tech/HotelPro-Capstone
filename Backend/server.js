@@ -75,13 +75,20 @@ app.post('/api/stripe', express.raw({ type: 'application/json' }), handleStripeW
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
-// Database Connection
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/hotelpro';
+// Database Connection handling with serverless connection pooling & resilience
+let lastDbError = null;
 
-mongoose
-  .connect(MONGO_URI)
-  .then(async () => {
+const connectDB = async () => {
+  if (mongoose.connection.readyState === 1) {
+    return;
+  }
+  try {
+    const rawUri = (process.env.MONGO_URI || 'mongodb://localhost:27017/hotelpro').trim().replace(/[\r\n]+/g, '');
+    await mongoose.connect(rawUri, {
+      serverSelectionTimeoutMS: 6000
+    });
     console.log('✅ MongoDB Connected to HotelPro Database');
+    lastDbError = null;
     try {
       const hotelCount = await Hotel.countDocuments();
       const roomCount = await Room.countDocuments();
@@ -92,10 +99,22 @@ mongoose
     } catch (e) {
       console.warn('Auto-seed check notice:', e.message);
     }
-  })
-  .catch((err) => {
+  } catch (err) {
+    lastDbError = err.message;
     console.error('❌ Database connection error:', err.message);
-  });
+  }
+};
+
+// Initial connect
+connectDB();
+
+// Middleware to ensure DB connection is ready on every serverless invocation
+app.use(async (req, res, next) => {
+  if (mongoose.connection.readyState !== 1 && !req.path.startsWith('/api/stripe')) {
+    await connectDB();
+  }
+  next();
+});
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -109,13 +128,18 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/support', supportRoutes);
 
-// Root route
+// Root route with diagnostics
 app.get('/', (req, res) => {
+  const stateNames = ['disconnected', 'connected', 'connecting', 'disconnecting'];
   res.json({
     status: 'online',
     system: 'HotelPro Hospitality Management API',
     version: '2.5.0',
-    environment: process.env.NODE_ENV || 'development',
+    database: {
+      status: stateNames[mongoose.connection.readyState] || 'unknown',
+      connected: mongoose.connection.readyState === 1,
+      error: lastDbError
+    },
     documentation: {
       auth: '/api/auth',
       rooms: '/api/rooms',
