@@ -128,7 +128,7 @@ router.post('/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error.message);
-    res.status(500).json({ message: 'Server error during authentication' });
+    res.status(500).json({ message: 'Server error during authentication', detail: error.message });
   }
 });
 
