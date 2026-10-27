@@ -16,11 +16,17 @@ const paymentSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['Completed', 'Pending', 'Refunded', 'Failed'],
-    default: 'Completed'
+    default: 'Pending'
   },
   invoiceNumber: { type: String, required: true },
   cardLast4: { type: String, default: '4242' },
+  failureReason: { type: String, default: '' },
   paidAt: { type: Date, default: Date.now }
 });
+
+// Indexes for high performance payment auditing and lookup
+paymentSchema.index({ bookingId: 1 });
+paymentSchema.index({ userEmail: 1, paidAt: -1 });
+paymentSchema.index({ transactionId: 1 });
 
 module.exports = mongoose.model('Payment', paymentSchema);

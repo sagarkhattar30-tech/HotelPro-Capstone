@@ -1,0 +1,890 @@
+/* ═══════════════════════════════════════════════════════════════
+   AATITHYA (आतिथ्य) — Royal Indian Heritage & Luxury Hospitality
+   Design System: Warm Ivory, Deep Emerald, Terracotta & Subtle Gold
+   Tagline: Atithi Devo Bhava (अतिथि देवो भव)
+   ═══════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Rozha+One&display=swap');
+
+:root {
+  /* ── Background & Surfaces (Warm Ivory, Avoid Dark Black) ── */
+  --bg-primary:     #FAF7F2;
+  --bg-surface:     #FFFFFF;
+  --bg-secondary:   #F3EFE6;
+  --bg-tertiary:    #EBE4D5;
+  --bg-glass:       rgba(255, 255, 255, 0.88);
+
+  /* ── Primary Palette: Royal Emerald ── */
+  --emerald-900:    #0A261E;
+  --emerald-800:    #0F3A2F;
+  --emerald-700:    #1A5243;
+  --emerald-600:    #256B58;
+  --emerald-soft:   rgba(15, 58, 47, 0.07);
+  --emerald-dim:    rgba(15, 58, 47, 0.14);
+
+  /* ── Accent 1: Terracotta / Heritage Clay ── */
+  --terracotta:      #C15336;
+  --terracotta-dark: #A33F25;
+  --terracotta-soft: rgba(193, 83, 54, 0.09);
+
+  /* ── Accent 2: Subtle Rajasthani Gold ── */
+  --gold:           #C5A059;
+  --gold-light:     #E5C687;
+  --gold-dark:      #9E7B35;
+  --gold-soft:      rgba(197, 160, 89, 0.15);
+  --gold-border:    rgba(197, 160, 89, 0.35);
+
+  /* ── Typography & Contrasts ── */
+  --charcoal:       #1E2421;
+  --charcoal-soft:  #2D3732;
+  --text-main:      #1E2421;
+  --text-body:      #3D4A43;
+  --text-muted:     #6E7D75;
+  --text-light:     #FAF7F2;
+
+  /* ── Fonts ── */
+  --font-serif:     'Cormorant Garamond', Georgia, serif;
+  --font-sans:      'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-label:     'Cinzel', serif;
+  --font-heritage:  'Rozha One', serif;
+
+  /* ── Shadows & Radii ── */
+  --shadow-sm:      0 2px 8px rgba(15, 58, 47, 0.04);
+  --shadow-md:      0 8px 24px rgba(15, 58, 47, 0.08);
+  --shadow-lg:      0 16px 48px rgba(15, 58, 47, 0.12);
+  --shadow-modal:   0 24px 64px rgba(10, 38, 30, 0.22);
+
+  --radius-xs:      4px;
+  --radius-sm:      8px;
+  --radius-md:      14px;
+  --radius-lg:      22px;
+  --radius-full:    9999px;
+
+  /* Legacy Backward Compatibility Tokens */
+  --noir:           #FAF7F2;
+  --ivory:          #FAF7F2;
+  --warm-white:     #FFFFFF;
+  --gold-dim:       rgba(197, 160, 89, 0.15);
+  --ease-expo:      cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-primary);
+  color: var(--text-main);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: var(--font-sans);
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 0.25s var(--ease-expo);
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+h1, h2, h3, h4, .serif {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--emerald-900);
+}
+
+/* ── Reusable Buttons ── */
+.btn-gold, .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--emerald-800);
+  color: #FAF7F2 !important;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 12px 26px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--emerald-700);
+  box-shadow: 0 4px 14px rgba(15, 58, 47, 0.18);
+  transition: all 0.25s var(--ease-expo);
+  cursor: pointer;
+}
+
+.btn-gold:hover, .btn-primary:hover {
+  background: var(--emerald-900);
+  border-color: var(--gold);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(15, 58, 47, 0.28);
+  color: #FAF7F2 !important;
+}
+
+.btn-outline-gold, .btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--emerald-800) !important;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 12px 24px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--emerald-800);
+  transition: all 0.25s var(--ease-expo);
+  cursor: pointer;
+}
+
+.btn-outline-gold:hover, .btn-outline:hover {
+  background: var(--emerald-soft);
+  border-color: var(--emerald-900);
+  color: var(--emerald-900) !important;
+  transform: translateY(-2px);
+}
+
+.btn-terracotta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--terracotta);
+  color: #FFFFFF !important;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: var(--radius-sm);
+  border: none;
+  box-shadow: 0 4px 14px rgba(193, 83, 54, 0.22);
+  transition: all 0.25s var(--ease-expo);
+}
+
+.btn-terracotta:hover {
+  background: var(--terracotta-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(193, 83, 54, 0.32);
+}
+
+/* ── Elevated Aatithya Luxury Navigation Bar ── */
+.aatithya-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  height: 84px;
+  background: rgba(250, 247, 242, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(197, 160, 89, 0.24);
+  box-shadow: 0 4px 24px rgba(15, 58, 47, 0.04);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+}
+
+.aatithya-navbar.is-scrolled {
+  height: 72px;
+  background: rgba(255, 255, 255, 0.98);
+  border-bottom-color: rgba(197, 160, 89, 0.38);
+  box-shadow: 0 8px 32px rgba(15, 58, 47, 0.08);
+}
+
+.aatithya-nav-container {
+  max-width: 1360px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.aatithya-nav-brand {
+  display: inline-flex;
+  text-decoration: none;
+  transition: transform 0.2s ease;
+}
+
+.aatithya-nav-brand:hover {
+  transform: translateY(-1px);
+}
+
+.aatithya-nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 34px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.aatithya-nav-item {
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-body, #3D4A43);
+  text-decoration: none;
+  padding: 8px 2px;
+  position: relative;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+}
+
+.aatithya-nav-item::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold, #C5A059), transparent);
+  transition: all 0.25s ease;
+  transform: translateX(-50%);
+  border-radius: 2px;
+}
+
+.aatithya-nav-item:hover,
+.aatithya-nav-item.active {
+  color: var(--emerald-800, #0F3A2F);
+  font-weight: 600;
+}
+
+.aatithya-nav-item:hover::after,
+.aatithya-nav-item.active::after {
+  width: 100%;
+  background: var(--gold, #C5A059);
+}
+
+.aatithya-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* ── Icon Button (Bell, etc.) ── */
+.aatithya-icon-btn {
+  background: rgba(15, 58, 47, 0.04);
+  border: 1px solid rgba(197, 160, 89, 0.35);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.aatithya-icon-btn:hover {
+  background: rgba(197, 160, 89, 0.15);
+  border-color: var(--gold, #C5A059);
+  transform: scale(1.05);
+}
+
+.aatithya-badge-count {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background: var(--terracotta, #C15336);
+  color: #FFFFFF;
+  font-size: 0.62rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 1.5px solid #FFFFFF;
+  box-shadow: 0 2px 6px rgba(193, 83, 54, 0.4);
+}
+
+/* ── Luxury User Account Pill ── */
+.aatithya-user-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #FFFFFF;
+  border: 1px solid rgba(197, 160, 89, 0.4);
+  padding: 5px 14px 5px 6px;
+  border-radius: 30px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(15, 58, 47, 0.04);
+  transition: all 0.25s ease;
+}
+
+.aatithya-user-pill:hover {
+  border-color: var(--gold, #C5A059);
+  box-shadow: 0 4px 14px rgba(197, 160, 89, 0.2);
+  transform: translateY(-1px);
+}
+
+.aatithya-avatar-ring {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #175040, #0F3A2F);
+  border: 1.5px solid var(--gold, #C5A059);
+  color: var(--gold, #C5A059);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-label, 'Cinzel');
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.aatithya-user-label {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  line-height: 1.15;
+}
+
+.aatithya-user-greeting {
+  font-size: 0.62rem;
+  font-family: var(--font-sans);
+  color: var(--text-muted, #6E7D75);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.aatithya-user-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--emerald-900, #0A261E);
+}
+
+/* ── Guest Action Buttons ── */
+.aatithya-guest-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.aatithya-link-signin {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--emerald-800, #0F3A2F);
+  padding: 8px 14px;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.aatithya-link-signin:hover {
+  color: var(--terracotta, #C15336);
+}
+
+.aatithya-btn-reserve {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #134639 0%, #0F3A2F 100%);
+  color: #FAF7F2 !important;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 10px 22px;
+  border-radius: 24px;
+  border: 1px solid var(--gold, #C5A059);
+  box-shadow: 0 4px 14px rgba(15, 58, 47, 0.22);
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+
+.aatithya-btn-reserve:hover {
+  background: linear-gradient(135deg, #0A261E 0%, #0F3A2F 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(197, 160, 89, 0.35);
+  color: #FAF7F2 !important;
+}
+
+/* ── Luxury Popovers (Notifications & User Menu) ── */
+.aatithya-popover {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  background: #FFFFFF;
+  border: 1px solid rgba(197, 160, 89, 0.4);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(15, 58, 47, 0.16);
+  z-index: 1001;
+  animation: aatithyaFadeDown 0.22s ease-out;
+  overflow: hidden;
+}
+
+@keyframes aatithyaFadeDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.aatithya-notif-popover {
+  width: 340px;
+}
+
+.aatithya-user-popover {
+  width: 290px;
+}
+
+.aatithya-popover-header {
+  padding: 16px 20px;
+  background: rgba(250, 247, 242, 0.7);
+  border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.aatithya-popover-title {
+  font-family: var(--font-label, 'Cinzel');
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: var(--emerald-900, #0A261E);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.aatithya-popover-badge {
+  background: rgba(193, 83, 54, 0.12);
+  color: var(--terracotta, #C15336);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(193, 83, 54, 0.25);
+}
+
+.aatithya-popover-body {
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.aatithya-notif-empty {
+  padding: 32px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted, #6E7D75);
+}
+
+.aatithya-notif-empty p {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--emerald-900, #0F3A2F);
+  margin: 0;
+}
+
+.aatithya-notif-empty span {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--text-muted, #6E7D75);
+}
+
+.aatithya-notif-row {
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(15, 58, 47, 0.05);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.aatithya-notif-row:hover {
+  background: rgba(250, 247, 242, 0.8);
+}
+
+.aatithya-notif-row.is-unread {
+  background: rgba(197, 160, 89, 0.06);
+}
+
+.aatithya-notif-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold, #C5A059);
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.aatithya-notif-row.is-read .aatithya-notif-dot {
+  background: rgba(15, 58, 47, 0.18);
+}
+
+.aatithya-notif-content p {
+  font-size: 0.82rem;
+  color: var(--text-main, #1E2421);
+  line-height: 1.45;
+  margin: 0 0 4px;
+}
+
+.aatithya-notif-time {
+  font-size: 0.68rem;
+  color: var(--text-muted, #6E7D75);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* User Popover Specifics */
+.aatithya-user-menu-header {
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(250, 247, 242, 0.8);
+}
+
+.aatithya-avatar-large {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #175040, #0F3A2F);
+  border: 2px solid var(--gold, #C5A059);
+  color: var(--gold, #C5A059);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-label, 'Cinzel');
+  font-size: 0.95rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.aatithya-user-fullname {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--emerald-900, #0A261E);
+  line-height: 1.2;
+}
+
+.aatithya-user-email {
+  font-size: 0.74rem;
+  color: var(--text-muted, #6E7D75);
+  margin-bottom: 6px;
+  word-break: break-all;
+}
+
+.aatithya-role-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(197, 160, 89, 0.15);
+  color: var(--emerald-800, #0F3A2F);
+  border: 1px solid rgba(197, 160, 89, 0.35);
+}
+
+.aatithya-menu-divider {
+  height: 1px;
+  background: rgba(197, 160, 89, 0.18);
+}
+
+.aatithya-user-menu-list {
+  list-style: none;
+  padding: 8px 0;
+  margin: 0;
+}
+
+.aatithya-menu-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  font-size: 0.84rem;
+  color: var(--text-body, #3D4A43);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.aatithya-menu-link:hover {
+  background: rgba(15, 58, 47, 0.04);
+  color: var(--emerald-900, #0A261E);
+  padding-left: 24px;
+}
+
+.aatithya-btn-logout {
+  width: 100%;
+  padding: 9px;
+  border: 1px solid rgba(193, 83, 54, 0.35);
+  background: rgba(193, 83, 54, 0.06);
+  color: var(--terracotta, #C15336);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aatithya-btn-logout:hover {
+  background: var(--terracotta, #C15336);
+  color: #FFFFFF;
+}
+
+/* ── Mobile Hamburger & Drawer ── */
+.aatithya-hamburger-btn {
+  display: none;
+  background: transparent;
+  border: 1px solid rgba(197, 160, 89, 0.35);
+  border-radius: 8px;
+  padding: 6px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.aatithya-mobile-drawer {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #FAF7F2;
+  border-bottom: 2px solid var(--gold, #C5A059);
+  box-shadow: 0 16px 40px rgba(15, 58, 47, 0.15);
+  animation: aatithyaFadeDown 0.25s ease-out;
+}
+
+.aatithya-mobile-drawer-inner {
+  padding: 24px 28px 28px;
+}
+
+.aatithya-mobile-nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.aatithya-mobile-nav-list a {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--emerald-900, #0A261E);
+  text-decoration: none;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+}
+
+.aatithya-mobile-nav-list a.active {
+  color: var(--terracotta, #C15336);
+}
+
+.aatithya-mobile-footer {
+  padding-top: 16px;
+  border-top: 1px solid rgba(197, 160, 89, 0.2);
+}
+
+/* ── Media Queries for Responsive Nav ── */
+@media (max-width: 960px) {
+  .aatithya-nav-menu {
+    display: none;
+  }
+  .aatithya-hamburger-btn {
+    display: flex;
+  }
+  .aatithya-nav-container {
+    padding: 0 20px;
+  }
+}
+
+/* Legacy Backward Compatibility Classes */
+.aa-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+}
+.aa-logo { display: inline-flex; }
+
+
+/* ── Heritage Form Inputs ── */
+.form-input, .form-select {
+  width: 100%;
+  padding: 12px 16px;
+  background: #FFFFFF;
+  border: 1.5px solid #E2D9CC;
+  border-radius: var(--radius-sm);
+  color: var(--emerald-900);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input:focus, .form-select:focus {
+  border-color: var(--emerald-700);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(15, 58, 47, 0.1);
+}
+
+/* ── Modal Overlays ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 38, 30, 0.65);
+  backdrop-filter: blur(8px);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.modal-content {
+  background: #FFFFFF;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gold-border);
+  box-shadow: var(--shadow-modal);
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s var(--ease-expo);
+  color: var(--text-main);
+}
+
+/* ── Keyframe Animations ── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ── Skeleton Loaders ── */
+.skeleton {
+  background: linear-gradient(90deg, #F3EFE6 25%, #EBE4D5 50%, #F3EFE6 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Badges ── */
+.badge-emerald {
+  background: rgba(15, 58, 47, 0.08);
+  color: var(--emerald-800);
+  border: 1px solid rgba(15, 58, 47, 0.2);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.badge-terracotta {
+  background: rgba(193, 83, 54, 0.1);
+  color: var(--terracotta);
+  border: 1px solid rgba(193, 83, 54, 0.25);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.badge-gold {
+  background: rgba(197, 160, 89, 0.12);
+  color: var(--gold-dark);
+  border: 1px solid rgba(197, 160, 89, 0.3);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .aa-nav {
+    padding: 0 20px;
+    height: 68px;
+  }
+  .aa-nav-links {
+    gap: 16px;
+  }
+  .aa-nav-links a {
+    font-size: 0.8rem;
+  }
+}
+
+/* ── Hotel & Room Bento Image Gallery ── */
+.hotel-bento-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, 175px);
+  gap: 8px;
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+}
+
+.hotel-bento-main {
+  grid-column: 1 / 3;
+  grid-row: 1 / 3;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .hotel-bento-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto;
+    gap: 6px;
+  }
+  .hotel-bento-main {
+    grid-column: 1 / -1 !important;
+    height: 220px !important;
+  }
+  .hotel-bento-sub {
+    height: 110px !important;
+  }
+}
+

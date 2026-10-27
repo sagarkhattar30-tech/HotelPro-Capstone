@@ -1,0 +1,190 @@
+erDiagram
+    USER ||--o{ BOOKING : "places (userEmail)"
+    USER ||--o{ PAYMENT : "audited under (userEmail)"
+    USER ||--o{ REVIEW : "writes (userEmail)"
+    USER ||--o{ NOTIFICATION : "receives (recipientEmail)"
+    USER ||--o{ SERVICE_REQUEST : "requests (guestEmail)"
+    USER ||--o{ ADMIN_LOG : "performed by (email)"
+
+    HOTEL ||--o{ ROOM : "contains (hotelId)"
+
+    ROOM ||--o{ BOOKING : "reserved in (roomId)"
+    ROOM ||--o{ REVIEW : "evaluated for (roomId)"
+
+    BOOKING ||--o| PAYMENT : "reconciles (bookingId)"
+    BOOKING ||--o| CHECK_IN_OUT : "checked in via (bookingId)"
+
+    USER {
+        ObjectId _id PK
+        string name "required"
+        string email "required, unique, indexed"
+        string password "hashed bcrypt"
+        string role "Guest | Staff | Admin"
+        string phone
+        string avatar
+        string membershipTier "Silver | Gold Elite | Platinum VIP"
+        Date createdAt
+    }
+
+    HOTEL {
+        ObjectId _id PK
+        string name "required"
+        string city "required"
+        string country "required"
+        string location "required"
+        string address "required"
+        number starRating "default 5"
+        number rating "default 4.9"
+        number reviewCount "default 120"
+        string image "required"
+        string_array images
+        string description "required"
+        string_array amenities
+        number startingPrice
+        string phone
+        string email
+        boolean featured "default true"
+        Date createdAt
+    }
+
+    ROOM {
+        ObjectId _id PK
+        string roomNumber "required, unique, indexed"
+        string name "required"
+        ObjectId hotelId FK "ref: Hotel"
+        string hotelName
+        string city
+        string location
+        string type "Deluxe | Executive Suite | Presidential Villa | Penthouse | Standard Double | Ocean Villa | Alpine Chalet | Heritage Suite"
+        number pricePerNight "required"
+        number capacity "required"
+        string bedType
+        number sizeSqFt
+        number floor
+        string image "required"
+        string_array images
+        string description "required"
+        string_array amenities
+        boolean isAvailable "default true"
+        string status "Available | Occupied | Cleaning | Maintenance"
+        seasonalPricing_array seasonalPricing
+        number rating "default 4.8"
+        number reviewCount "default 12"
+        boolean featured
+        Date createdAt
+    }
+
+    BOOKING {
+        ObjectId _id PK
+        string bookingNumber "required, unique, indexed"
+        string userEmail "required, indexed"
+        string userName "required"
+        string userPhone
+        ObjectId roomId FK "ref: Room, indexed"
+        string roomName "required"
+        string roomNumber
+        string roomImage
+        Date checkInDate "required, indexed"
+        Date checkOutDate "required, indexed"
+        number nights "default 1"
+        number guestsCount "default 2"
+        number pricePerNight "required"
+        number taxAmount "12 percent luxury tax"
+        number totalPrice "required, server-calculated"
+        string status "Confirmed | Checked-In | Checked-Out | Cancelled"
+        string paymentStatus "Paid | Pending | Failed | Refunded"
+        Date holdExpiresAt "indexed sparse, 15-min hold"
+        string hotelName
+        string hotelImage
+        string paymentMethod "Stripe | Pay at Hotel Desk"
+        string transactionId
+        string stripeSessionId
+        string stripePaymentIntentId
+        string specialRequests
+        string cancellationReason
+        string currency "USD | EUR | INR"
+        number chargedAmount "actual amount paid"
+        string chargedCurrency "actual currency charged"
+        string refundStatus "None | Refund Processed | Stripe Refund Processed"
+        Date createdAt
+    }
+
+    PAYMENT {
+        ObjectId _id PK
+        ObjectId bookingId FK "ref: Booking, indexed"
+        string bookingNumber "required"
+        string userEmail "required, indexed"
+        string userName "required"
+        number amount "required"
+        string currency "EUR | USD | INR"
+        string paymentMethod "Stripe | Pay at Hotel Desk | Credit Card"
+        string transactionId "required, indexed"
+        string status "Completed | Pending | Refunded | Failed"
+        string invoiceNumber "required, unique format"
+        string cardLast4
+        string failureReason
+        Date paidAt
+    }
+
+    REVIEW {
+        ObjectId _id PK
+        ObjectId roomId FK "ref: Room, required"
+        string roomName "required"
+        string userEmail "required"
+        string userName "required"
+        number rating "1 to 5 stars"
+        string comment "required"
+        string staffReply
+        Date createdAt
+    }
+
+    NOTIFICATION {
+        ObjectId _id PK
+        string recipientEmail "indexed"
+        string role "Guest | Staff | Admin | All"
+        string title "required"
+        string message "required"
+        string type "booking | payment | service | checkin | system"
+        boolean isRead "default false"
+        Date createdAt
+    }
+
+    SERVICE_REQUEST {
+        ObjectId _id PK
+        string guestName "required"
+        string guestEmail "required"
+        string roomNumber "required"
+        string serviceType "Housekeeping | Room Service Food | Maintenance | Luggage Assistance | Concierge & Transport | Extra Amenities"
+        string details "required"
+        string priority "Low | Medium | Urgent"
+        string status "Requested | In Progress | Completed | Cancelled"
+        string assignedStaff "default Unassigned"
+        Date requestedAt
+        Date completedAt
+    }
+
+    CHECK_IN_OUT {
+        ObjectId _id PK
+        ObjectId bookingId FK "ref: Booking, required"
+        string bookingNumber "required"
+        string guestName "required"
+        string guestEmail "required"
+        string roomNumber "required"
+        Date checkInTime
+        Date checkOutTime
+        string keyCardCode "e.g. AZ-101-4921"
+        string staffName "default Duty Concierge"
+        string inspectionNotes
+        number extraCharges "default 0"
+        string status "Active | Completed"
+        Date createdAt
+    }
+
+    ADMIN_LOG {
+        ObjectId _id PK
+        string action "required"
+        string performedBy "required email"
+        string targetEntity
+        string details
+        Date timestamp "indexed"
+    }

@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const Review = require('../models/Review');
 const Room = require('../models/Room');
 const { protect, authorize } = require('../middleware/auth');
+const { getHeritageSuiteById } = require('../utils/heritageHotelsData');
 
 // @route   GET /api/reviews
 // @desc    List recent reviews (authenticated — used by UnifiedDashboard)
@@ -45,7 +46,15 @@ router.post('/', protect, async (req, res) => {
       return res.status(400).json({ message: 'Invalid Room ID' });
     }
 
-    const room = await Room.findById(roomId);
+    let room = await Room.findById(roomId);
+    let isCatalogSuite = false;
+    if (!room) {
+      const catalogSuite = getHeritageSuiteById(roomId);
+      if (catalogSuite) {
+        room = catalogSuite;
+        isCatalogSuite = true;
+      }
+    }
     if (!room) {
       return res.status(404).json({ message: 'Room not found' });
     }
@@ -76,10 +85,13 @@ router.post('/', protect, async (req, res) => {
     const allReviews = await Review.find({ roomId: room._id });
     const avg = allReviews.reduce((acc, curr) => acc + curr.rating, 0) / allReviews.length;
 
-    await Room.findByIdAndUpdate(room._id, {
-      rating: Number(avg.toFixed(2)),
-      reviewCount: allReviews.length
-    });
+    // Update room average rating in DB if room document exists
+    if (!isCatalogSuite) {
+      await Room.findByIdAndUpdate(room._id, {
+        rating: Number(avg.toFixed(2)),
+        reviewCount: allReviews.length
+      });
+    }
 
     res.status(201).json({ message: 'Thank you for your feedback! Review published.', review });
   } catch (error) {

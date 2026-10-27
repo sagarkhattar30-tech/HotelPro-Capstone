@@ -8,6 +8,7 @@ const ServiceRequest = require('../models/ServiceRequest');
 const AdminLog = require('../models/AdminLog');
 const { protect, authorize } = require('../middleware/auth');
 const { sendCheckInEmail } = require('../utils/emailService');
+const { HERITAGE_SUITES, getHeritageSuiteById } = require('../utils/heritageHotelsData');
 
 // @route   GET /api/staff/stats
 // @desc    Operational overview statistics for staff dashboard (Staff/Admin only)
@@ -197,47 +198,102 @@ router.post('/checkout', protect, authorize('Staff', 'Admin'), async (req, res) 
 });
 
 // @route   GET /api/staff/rooms/status
-// @desc    Get complete real-time room housekeeping grid (Staff/Admin only)
-router.get('/rooms/status', protect, authorize('Staff', 'Admin'), async (req, res) => {
+// @desc    Get complete real-time room housekeeping grid (Staff/Admin/Guest)
+router.get('/rooms/status', protect, authorize('Staff', 'Admin', 'Guest'), async (req, res) => {
   try {
-    const rooms = await Room.find().sort({ roomNumber: 1 });
-    res.json(rooms);
+    const dbRooms = await Room.find().sort({ roomNumber: 1 });
+    const dbNumbers = new Set(dbRooms.map((r) => r.roomNumber));
+    const unseededHeritage = HERITAGE_SUITES.filter((s) => !dbNumbers.has(s.roomNumber));
+    res.json([...dbRooms, ...unseededHeritage]);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching room inventory' });
   }
 });
 
 // @route   PUT /api/staff/rooms/:id/status
-// @desc    Change room status (Staff/Admin only)
-router.put('/rooms/:id/status', protect, authorize('Staff', 'Admin'), async (req, res) => {
+// @desc    Change room status (Staff/Admin/Guest)
+router.put('/rooms/:id/status', protect, authorize('Staff', 'Admin', 'Guest'), async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ message: 'Invalid Room ID' });
-    }
-
     const { status } = req.body;
     const allowed = ['Available', 'Occupied', 'Cleaning', 'Maintenance'];
     if (!allowed.includes(status)) {
       return res.status(400).json({ message: `Status must be one of: ${allowed.join(', ')}` });
     }
 
-    const room = await Room.findById(req.params.id);
-    if (!room) return res.status(404).json({ message: 'Room not found' });
+    const roomId = req.params.id;
+    let room = null;
 
-    room.status = status;
-    room.isAvailable = status === 'Available';
-    await room.save();
+    if (mongoose.Types.ObjectId.isValid(roomId)) {
+      room = await Room.findById(roomId);
+    }
 
-    await AdminLog.create({
-      action: 'Room Housekeeping Updated',
-      performedBy: req.user.email,
-      targetEntity: `Room #${room.roomNumber}`,
-      details: `Status set to ${status}`
-    });
+    if (!room) {
+      room = await Room.findOne({ roomNumber: roomId });
+    }
+
+    // Check heritage suite catalog
+    const heritageSuite = getHeritageSuiteById(roomId);
+
+    if (heritageSuite) {
+      // Update in-memory heritage suite record so GET /api/rooms reflects changes immediately
+      heritageSuite.status = status;
+      heritageSuite.isAvailable = status === 'Available';
+
+      if (!room) {
+        // Upsert into MongoDB Room collection
+        try {
+          const suiteData = {
+            ...heritageSuite,
+            status,
+            isAvailable: status === 'Available'
+          };
+          if (!mongoose.Types.ObjectId.isValid(suiteData._id)) {
+            delete suiteData._id;
+          }
+          room = await Room.findOneAndUpdate(
+            { roomNumber: heritageSuite.roomNumber },
+            { $set: suiteData },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+          );
+        } catch (dbErr) {
+          console.warn('Upserting heritage suite fallback:', dbErr.message);
+          room = heritageSuite;
+        }
+      }
+    }
+
+    if (!room) {
+      return res.status(404).json({ message: 'Room not found' });
+    }
+
+    if (room.save && typeof room.save === 'function') {
+      room.status = status;
+      room.isAvailable = status === 'Available';
+      await room.save();
+    }
+
+    // Keep any matching in-memory heritage suite in sync
+    const matchingMemory = HERITAGE_SUITES.find((s) => s.roomNumber === room.roomNumber);
+    if (matchingMemory) {
+      matchingMemory.status = status;
+      matchingMemory.isAvailable = status === 'Available';
+    }
+
+    try {
+      await AdminLog.create({
+        action: 'Room Housekeeping Updated',
+        performedBy: req.user?.email || 'Staff Desk',
+        targetEntity: `Room #${room.roomNumber}`,
+        details: `Status set to ${status}`
+      });
+    } catch (logErr) {
+      // non-fatal log failure
+    }
 
     res.json({ message: `Room ${room.roomNumber} status set to ${status}`, room });
   } catch (error) {
-    res.status(500).json({ message: 'Error updating room status' });
+    console.error('Error updating room status:', error);
+    res.status(500).json({ message: 'Error updating room status', error: error.message });
   }
 });
 

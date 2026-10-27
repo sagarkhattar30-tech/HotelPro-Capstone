@@ -1,0 +1,26 @@
+flowchart TD
+    Login[Staff / Admin Authenticates via /api/auth/login] --> RoleCheck{Role Assigned in JWT?}
+
+    RoleCheck -- Staff --> StaffPortal[Navigate to /staff or Staff Tab]
+    RoleCheck -- Admin --> AdminPortal[Navigate to /admin or Admin Tab]
+
+    subgraph Staff_Operations["Staff Desk Operations (/api/staff)"]
+        StaffPortal --> OpStats[GET /api/staff/stats<br/>Occupancy, check-ins today, pending requests]
+        StaffPortal --> CheckIn[POST /api/staff/checkin<br/>Issue Encrypted Keycard Code<br/>Set Room to 'Occupied'<br/>Set Booking to 'Checked-In']
+        StaffPortal --> CheckOut[POST /api/staff/checkout<br/>Set Booking to 'Checked-Out'<br/>Set Room to 'Cleaning'<br/>Auto-create Housekeeping Ticket]
+        StaffPortal --> Housekeeping[PUT /api/staff/rooms/:id/status<br/>Toggle: Available, Occupied, Cleaning, Maintenance]
+        StaffPortal --> ServiceTickets[Manage Guest Service Requests<br/>Update Status: Requested -> In Progress -> Completed]
+    end
+
+    subgraph Admin_Operations["Executive Administrative Center (/api/admin)"]
+        AdminPortal --> KPIAnalytics[GET /api/admin/analytics<br/>Total Revenue, Occupancy Rate %, Active Bookings]
+        AdminPortal --> UserMgmt[GET /api/admin/users & PUT /api/admin/users/:id/role<br/>Manage Staff, Admins, Membership Tiers]
+        AdminPortal --> RoomCRUD[Manage Rooms: POST/PUT/DELETE /api/rooms<br/>Manage Properties: POST/PUT/DELETE /api/hotels]
+        AdminPortal --> AuditLogs[GET /api/admin/logs<br/>Immutable Audit Trail of all actions & timestamps]
+    end
+
+    CheckIn --> AuditStaff[Log in AdminLog collection]
+    CheckOut --> AuditStaff
+    Housekeeping --> AuditStaff
+    UserMgmt --> AuditAdmin[Log in AdminLog collection]
+    RoomCRUD --> AuditAdmin

@@ -1,0 +1,50 @@
+sequenceDiagram
+    autonumber
+    actor User as Guest / Staff / Admin
+    participant View as React UI Component<br/>(BookingPaymentModal.jsx)
+    participant Axios as API Client<br/>(axiosClient.js)
+    participant Route as Express Router<br/>(routes/bookingRoutes.js)
+    participant Auth as Auth & Security<br/>(middleware/auth.js)
+    participant Lock as Concurrency Mutex<br/>(utils/bookingAvailability.js)
+    participant Model as Mongoose Models<br/>(Room.js, Booking.js)
+    participant DB as MongoDB Database
+    participant Ext as Stripe Payment Gateway
+
+    User->>View: Select room dates & submit booking
+    View->>Axios: POST /api/bookings (Payload + Bearer Token)
+    Axios->>Route: HTTP POST request with headers
+    Route->>Auth: protect middleware verifies JWT token
+    Auth->>DB: User.findById(decoded.id)
+    DB-->>Auth: Verified user document
+    Auth-->>Route: req.user attached
+    
+    Route->>Lock: withRoomLock(roomId, callback)
+    Note over Lock: In-process Mutex locks Room ID<br/>prevents concurrent overlapping holds
+    
+    Lock->>Model: Room.findById(roomId)
+    Model->>DB: Query Room by ID
+    DB-->>Model: Return Room pricing and capacity
+    
+    Lock->>Model: findOverlappingBooking(roomId, checkIn, checkOut)
+    Model->>DB: Query overlapping confirmed/hold dates
+    DB-->>Model: Availability confirmed (no active overlap)
+    
+    Lock->>Route: Calculate server-side tariff<br/>nights = ceil(diffDays)<br/>taxAmount = round(nights * price * 0.12)<br/>totalPrice = subtotal + taxAmount
+    
+    opt Payment Method is Stripe
+        Route->>Ext: createCheckoutSessionForBooking(booking)<br/>EUR amount cents = round((INR / 110) * 100)
+        Ext-->>Route: Return Stripe session { id, url }
+    end
+
+    Route->>Model: Booking.create({ ..., status: 'Confirmed', paymentStatus: 'Pending', holdExpiresAt: now + 15m })
+    Model->>DB: Insert Booking & Payment audit record
+    DB-->>Model: Saved documents
+    Lock-->>Route: Release room lock mutex
+    Route-->>Axios: HTTP 201 Created { booking, checkoutUrl, stripeDetails }
+    Axios-->>View: JSON Response
+    
+    alt Stripe Checkout Flow
+        View->>User: Redirect window.location to Stripe Checkout URL
+    else Pay at Hotel Desk Flow
+        View->>User: Redirect to /booking-confirmation/:id
+    end

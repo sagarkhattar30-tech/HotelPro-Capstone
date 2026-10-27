@@ -1,0 +1,91 @@
+graph TB
+    subgraph Client_Tier["Client Presentation Tier (React 19 + Vite)"]
+        UI_Guest["Guest Portal<br/>(Home, Rooms, Booking Modal, My Bookings)"]
+        UI_Staff["Staff Desk<br/>(Check-In/Out, Housekeeping Grid, Services)"]
+        UI_Admin["Admin Center<br/>(KPI Analytics, User Mgmt, Audit Logs)"]
+        AxiosClient["Axios HTTP Client<br/>(Auth Bearer Interceptor, Error Normalizer)"]
+        UI_Guest --> AxiosClient
+        UI_Staff --> AxiosClient
+        UI_Admin --> AxiosClient
+    end
+
+    subgraph Security_Perimeter["Security Perimeter & Middlewares"]
+        SecHeaders["Security Headers<br/>(nosniff, DENY, XSS, Referrer)"]
+        CORS["CORS Policy Guard<br/>(Origin Whitelist Validation)"]
+        AuthMiddleware["Auth & RBAC Middleware<br/>(JWT Verify, protect, authorize)"]
+        SecHeaders --> CORS
+        CORS --> AuthMiddleware
+    end
+
+    subgraph API_Tier["Application Tier (Node.js 24 + Express 5)"]
+        R_Auth["/api/auth<br/>(Register, Login, Me, Profile)"]
+        R_Hotels["/api/hotels<br/>(Catalog & Properties)"]
+        R_Rooms["/api/rooms<br/>(Filter, Date Availability)"]
+        R_Bookings["/api/bookings<br/>(Pricing, 15m Hold, Mutex Lock)"]
+        R_Payments["/api/payments<br/>(Stripe Checkout, Invoices, Desk)"]
+        R_Staff["/api/staff<br/>(Stats, Checkin, Checkout, Grid)"]
+        R_Reviews["/api/reviews<br/>(Guest Reviews, Aggregation)"]
+        R_Admin["/api/admin<br/>(KPI Metrics, Role Management)"]
+        R_Support["/api/support<br/>(FAQs, Support Tickets)"]
+        WebhookHandler["/api/payments/stripe-webhook<br/>(Raw Body, constructEvent)"]
+    end
+
+    subgraph Business_Services["Core Business Logic & Utilities"]
+        LockService["In-Process Mutex<br/>(withRoomLock per Room ID)"]
+        AvailEngine["Availability Engine<br/>(getActiveBookingFilter, Date Range Math)"]
+        CurrEngine["Currency Converter<br/>(INR to EUR / cents, Rate: 110)"]
+        StripeService["Stripe Checkout Client<br/>(Session Builder, Metadata Injector)"]
+        InvoiceEngine["Invoice Generator<br/>(12% Tax, Subtotal, Rounding Adj.)"]
+    end
+
+    subgraph External_Services["External Services"]
+        Stripe_API["Stripe API & Checkout<br/>(EUR € Payments)"]
+        Stripe_Webhooks["Stripe Event Dispatcher<br/>(Webhook Signatures)"]
+    end
+
+    subgraph Data_Tier["Data Persistence Tier (MongoDB + Mongoose 9)"]
+        M_User[("Users")]
+        M_Hotel[("Hotels")]
+        M_Room[("Rooms")]
+        M_Booking[("Bookings")]
+        M_Payment[("Payments")]
+        M_Review[("Reviews")]
+        M_Notification[("Notifications")]
+        M_ServiceRequest[("ServiceRequests")]
+        M_CheckInOut[("CheckInOuts")]
+        M_AdminLog[("AdminLogs")]
+        Catalog_Suites[("Heritage Suites Catalog<br/>(In-Memory Fallback)")]
+    end
+
+    AxiosClient -->|"HTTP / REST (JSON)"| SecHeaders
+    AuthMiddleware --> R_Auth
+    AuthMiddleware --> R_Hotels
+    AuthMiddleware --> R_Rooms
+    AuthMiddleware --> R_Bookings
+    AuthMiddleware --> R_Payments
+    AuthMiddleware --> R_Staff
+    AuthMiddleware --> R_Reviews
+    AuthMiddleware --> R_Admin
+    AuthMiddleware --> R_Support
+
+    R_Bookings --> LockService
+    R_Bookings --> AvailEngine
+    R_Bookings --> CurrEngine
+    R_Bookings --> StripeService
+    R_Payments --> InvoiceEngine
+    R_Payments --> StripeService
+
+    StripeService -->|"Create Session (EUR)"| Stripe_API
+    Stripe_API -->|"Client Redirect"| UI_Guest
+    Stripe_Webhooks -->|"POST Webhook Event"| WebhookHandler
+
+    R_Auth --> M_User
+    R_Hotels --> M_Hotel
+    R_Rooms --> M_Room
+    R_Rooms -.-> Catalog_Suites
+    R_Bookings --> M_Booking
+    R_Payments --> M_Payment
+    R_Staff --> M_CheckInOut
+    R_Staff --> M_ServiceRequest
+    R_Reviews --> M_Review
+    R_Admin --> M_AdminLog

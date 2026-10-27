@@ -23,15 +23,27 @@ const bookingSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
-    enum: ['Paid', 'Pending', 'Refunded'],
-    default: 'Paid'
+    enum: ['Paid', 'Pending', 'Failed', 'Refunded'],
+    default: 'Pending'
   },
+  holdExpiresAt: {
+    type: Date,
+    default: null
+  },
+  hotelName: { type: String, default: 'The Grand Azure Resort & Spa' },
+  hotelImage: { type: String, default: '' },
   paymentMethod: { type: String, default: 'Credit Card' },
   transactionId: { type: String, default: '' },
   stripeSessionId: { type: String, default: '' },
   stripePaymentIntentId: { type: String, default: '' },
+  razorpayOrderId: { type: String, default: '' },
+  razorpayPaymentId: { type: String, default: '' },
+  razorpaySignature: { type: String, default: '' },
   specialRequests: { type: String, default: '' },
   cancellationReason: { type: String, default: '' },
+  currency: { type: String, default: 'USD' },
+  chargedAmount: { type: Number },
+  chargedCurrency: { type: String },
   refundStatus: {
     type: String,
     default: 'None'
@@ -43,5 +55,29 @@ const bookingSchema = new mongoose.Schema({
 bookingSchema.index({ userEmail: 1, createdAt: -1 });
 bookingSchema.index({ roomId: 1, checkInDate: 1, checkOutDate: 1, status: 1 });
 bookingSchema.index({ status: 1, checkInDate: 1 });
+bookingSchema.index({ razorpayOrderId: 1 });
+bookingSchema.index({ holdExpiresAt: 1 }, { sparse: true });
+
+// Helper to determine if a reservation or hold currently blocks room dates
+bookingSchema.methods.isHoldActive = function () {
+  if (this.status === 'Cancelled' || this.status === 'Checked-Out') {
+    return false;
+  }
+  if (this.paymentStatus === 'Paid') {
+    return true;
+  }
+  if (this.paymentMethod === 'Pay at Hotel Desk' && this.paymentStatus !== 'Failed') {
+    return true;
+  }
+  if (this.paymentStatus !== 'Pending') {
+    return false;
+  }
+  if (this.holdExpiresAt) {
+    return new Date(this.holdExpiresAt) > new Date();
+  }
+  const holdMinutes = parseInt(process.env.BOOKING_HOLD_EXPIRY_MINUTES || '15', 10);
+  const cutoff = Date.now() - holdMinutes * 60 * 1000;
+  return this.createdAt ? new Date(this.createdAt).getTime() > cutoff : false;
+};
 
 module.exports = mongoose.model('Booking', bookingSchema);

@@ -1,0 +1,32 @@
+flowchart TD
+    Start([Guest Browses HotelPro]) --> Browse[View Rooms & Heritage Suites]
+    Browse --> SelectDates[Select Check-In & Check-Out Dates]
+    SelectDates --> FilterCheck{Search Filter Applied?}
+    FilterCheck -- Yes --> FilterQuery[GET /api/rooms with checkIn & checkOut]
+    FilterQuery --> DateExclusion[getOverlappingBookingRoomIds excludes occupied suites]
+    DateExclusion --> RenderAvailable[Display available luxury suites]
+    FilterCheck -- No --> RenderAvailable
+
+    RenderAvailable --> ClickBook[Click 'Reserve Suite' on Room Card]
+    ClickBook --> AuthCheck{Is Guest Logged In?}
+    AuthCheck -- No --> RedirectLogin[Redirect to /login with redirect state]
+    RedirectLogin --> PostLogin[Authenticate & return to booking modal]
+    PostLogin --> ModalOpen[Open BookingPaymentModal]
+    AuthCheck -- Yes --> ModalOpen
+
+    ModalOpen --> InputDetails[Review nights, capacity, special requests]
+    InputDetails --> SelectMethod{Select Payment Method}
+
+    SelectMethod -- Pay at Hotel Desk --> SubmitDesk[POST /api/bookings<br/>paymentMethod: 'Pay at Hotel Desk']
+    SubmitDesk --> MutexDesk[Lock Room Mutex & Re-verify Availability]
+    MutexDesk --> CalcDesk[Server-Side Price Calculation<br/>nights × price + 12% tax]
+    CalcDesk --> SaveDesk[Save Booking with paymentStatus: 'Pending'<br/>holdExpiresAt: null]
+    SaveDesk --> ConfDesk[Redirect to /booking-confirmation/:id<br/>Display 'Payment collected at desk']
+
+    SelectMethod -- Stripe Online --> SubmitStripe[POST /api/bookings<br/>paymentMethod: 'Stripe']
+    SubmitStripe --> MutexStripe[Lock Room Mutex & Re-verify Availability]
+    MutexStripe --> CalcStripe[Server-Side Price Calculation<br/>Calculate Canonical INR: Base × 83]
+    CalcStripe --> ConvertEUR[Convert INR to EUR: INR ÷ 110<br/>Convert to Euro Cents: EUR × 100]
+    ConvertEUR --> CreateSession[Call Stripe API: checkout.sessions.create in EUR]
+    CreateSession --> SavePending[Save Booking with holdExpiresAt = now + 15m<br/>paymentStatus: 'Pending', stripeSessionId]
+    SavePending --> RedirectStripe[window.location.assign session.url<br/>Redirect Guest to Stripe Hosted Checkout]

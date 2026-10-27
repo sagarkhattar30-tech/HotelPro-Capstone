@@ -1,13 +1,15 @@
+
 const express = require('express');
 const router = express.Router();
 const Hotel = require('../models/Hotel');
 const Room = require('../models/Room');
 const AdminLog = require('../models/AdminLog');
 const { protect, authorize } = require('../middleware/auth');
+const { getMatchingHeritageSuites, getPropertyImages } = require('../utils/heritageHotelsData');
 
 // @route   GET /api/hotels
-// @desc    Get all luxury hotels & resort properties with room counts
-router.get('/', async (req, res) => {
+// @desc    Get all luxury hotels & resort properties with room counts (Protected)
+router.get('/', protect, async (req, res) => {
   try {
     const { city, search } = req.query;
     let query = {};
@@ -33,10 +35,22 @@ router.get('/', async (req, res) => {
     // Populate total rooms count dynamically
     const enrichedHotels = await Promise.all(
       hotels.map(async (h) => {
-        const totalRooms = await Room.countDocuments({ hotelName: h.name });
-        const availableRooms = await Room.countDocuments({ hotelName: h.name, status: 'Available' });
+        let totalRooms = await Room.countDocuments({ hotelName: h.name });
+        let availableRooms = await Room.countDocuments({ hotelName: h.name, status: 'Available' });
+        if (!totalRooms) {
+          const suites = getMatchingHeritageSuites({ hotel: h.name });
+          totalRooms = suites.length;
+          availableRooms = suites.filter((s) => s.isAvailable).length;
+        }
+        const obj = h.toObject();
+        if (!Array.isArray(obj.images) || obj.images.length <= 1) {
+          obj.images = getPropertyImages(obj.name, obj.image);
+        }
+        if (!obj.image || typeof obj.image !== 'string' || !obj.image.startsWith('http')) {
+          obj.image = obj.images[0];
+        }
         return {
-          ...h.toObject(),
+          ...obj,
           totalRooms: totalRooms || 4,
           availableRooms: availableRooms || 3
         };
@@ -50,14 +64,34 @@ router.get('/', async (req, res) => {
 });
 
 // @route   GET /api/hotels/:id
-// @desc    Get hotel details and its associated suites
-router.get('/:id', async (req, res) => {
+// @desc    Get hotel details and its associated suites (Protected)
+router.get('/:id', protect, async (req, res) => {
   try {
     const hotel = await Hotel.findById(req.params.id);
     if (!hotel) return res.status(404).json({ message: 'Hotel property not found' });
 
-    const rooms = await Room.find({ $or: [{ hotelId: hotel._id }, { hotelName: hotel.name }] });
-    res.json({ ...hotel.toObject(), rooms });
+    let rooms = await Room.find({ $or: [{ hotelId: hotel._id }, { hotelName: hotel.name }] });
+    if (!rooms || rooms.length === 0) {
+      rooms = getMatchingHeritageSuites({ hotel: hotel.name });
+    } else {
+      rooms = rooms.map((r) => {
+        const robj = r.toObject ? r.toObject() : { ...r };
+        if (!Array.isArray(robj.images) || robj.images.length <= 1) {
+          robj.images = getPropertyImages(robj.hotelName || hotel.name, robj.image);
+        }
+        return robj;
+      });
+    }
+
+    const hotelObj = hotel.toObject();
+    if (!Array.isArray(hotelObj.images) || hotelObj.images.length <= 1) {
+      hotelObj.images = getPropertyImages(hotelObj.name, hotelObj.image);
+    }
+    if (!hotelObj.image || typeof hotelObj.image !== 'string' || !hotelObj.image.startsWith('http')) {
+      hotelObj.image = hotelObj.images[0];
+    }
+
+    res.json({ ...hotelObj, rooms });
   } catch (error) {
     res.status(500).json({ message: 'Error retrieving hotel details', error: error.message });
   }

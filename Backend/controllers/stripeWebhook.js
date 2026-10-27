@@ -4,23 +4,47 @@ const { getStripe } = require('../utils/stripeClient');
 const { sendBookingConfirmationEmail } = require('../utils/emailService');
 
 const markBookingPaidFromStripe = async (session) => {
-  const bookingId = session.metadata?.bookingId;
+  const bookingId = session.metadata?.bookingId || session.client_reference_id;
   if (!bookingId) return;
 
   const booking = await Booking.findById(bookingId);
   if (!booking || booking.paymentStatus === 'Paid') return;
 
+  // Determine actual currency and amount charged by Stripe
+  const actualCurrency = String(session.currency || session.metadata?.currency || 'EUR').toUpperCase();
+  let actualAmount = null;
+
+  if (typeof session.amount_total === 'number' && !isNaN(session.amount_total)) {
+    actualAmount = Math.round(session.amount_total) / 100;
+  } else if (session.metadata?.eurAmount) {
+    actualAmount = parseFloat(session.metadata.eurAmount);
+  } else if (session.metadata?.gbpAmount) {
+    actualAmount = parseFloat(session.metadata.gbpAmount);
+  }
+
+  if (!actualAmount || isNaN(actualAmount)) {
+    const { convertInrToEur } = require('../utils/currencyConverter');
+    const inr = booking.totalPriceInr || Math.round(Number(booking.totalPrice) * 83);
+    actualAmount = convertInrToEur(inr).eurAmount;
+  }
+
   booking.paymentStatus = 'Paid';
   booking.status = booking.status === 'Cancelled' ? booking.status : 'Confirmed';
+  booking.holdExpiresAt = null;
   booking.transactionId = session.payment_intent ? String(session.payment_intent) : session.id;
   booking.stripeSessionId = session.id;
   booking.stripePaymentIntentId = session.payment_intent ? String(session.payment_intent) : booking.stripePaymentIntentId;
+  booking.currency = actualCurrency;
+  booking.chargedAmount = actualAmount;
+  booking.chargedCurrency = actualCurrency;
   await booking.save();
 
   await Payment.findOneAndUpdate(
     { bookingId: booking._id },
     {
       status: 'Completed',
+      amount: actualAmount,
+      currency: actualCurrency,
       transactionId: booking.transactionId,
       paymentMethod: 'Stripe',
       paidAt: new Date()
@@ -57,8 +81,17 @@ const handleStripeWebhook = async (req, res) => {
   try {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
-      if (session.payment_status === 'paid') {
+      if (session.payment_status === 'paid' || session.status === 'complete') {
         await markBookingPaidFromStripe(session);
+      }
+    } else if (event.type === 'payment_intent.succeeded') {
+      const paymentIntent = event.data.object;
+      if (paymentIntent.metadata?.bookingId) {
+        await markBookingPaidFromStripe({
+          id: paymentIntent.id,
+          payment_intent: paymentIntent.id,
+          metadata: paymentIntent.metadata
+        });
       }
     }
     res.json({ received: true });

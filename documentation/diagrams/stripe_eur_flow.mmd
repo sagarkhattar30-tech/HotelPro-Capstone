@@ -1,0 +1,40 @@
+flowchart TD
+    subgraph Client_Booking_Step["1. Reservation Initiation"]
+        A[Guest Selects Suite & Dates] --> B[Server Calculates Total Tariff in USD]
+        B --> C[Convert to Canonical INR: USD × 83]
+        C --> D[Convert to EUR: INR ÷ 110]
+        D --> E[Convert to Cents: EUR × 100]
+        E --> F[Stripe checkout.sessions.create currency: 'eur']
+        F --> G[Save Booking: paymentStatus 'Pending', holdExpiresAt = now + 15m]
+        G --> H[Redirect to Stripe Hosted Checkout]
+    end
+
+    subgraph Stripe_Interaction["2. Stripe Payment Processing"]
+        H --> I{Guest Completes Card Payment?}
+        I -- Cancelled / Dismissed --> J[Redirect to /booking-confirmation/:id?stripe=cancel]
+        J --> K[Hold Remains Active for 15m<br/>Guest Can Retry Payment Before Expiry]
+        I -- Successful Payment --> L[Stripe Processes Payment in EUR]
+    end
+
+    subgraph Verification_Dual_Path["3. Payment Verification & Fulfillment"]
+        L --> WebhookPath[Webhook Path: Event checkout.session.completed]
+        L --> RedirectPath[Redirect Path: /my-bookings?stripe=success&session_id=...]
+
+        WebhookPath --> VerifySig[Express raw parser verifies stripe-signature HMAC]
+        VerifySig --> MarkPaid1[markBookingPaidFromStripe: Update Booking to Paid]
+        
+        RedirectPath --> CallVerify[POST /api/payments/stripe/verify]
+        CallVerify --> RetrieveSession[Retrieve Session from Stripe API]
+        RetrieveSession --> MarkPaid2[markBookingPaidFromStripe: Update Booking to Paid]
+
+        MarkPaid1 --> ReconcileData[Persist actual charged EUR & Currency<br/>Nullify holdExpiresAt, Save Transaction ID]
+        MarkPaid2 --> ReconcileData
+        ReconcileData --> UpdatePayment[Update Payment Model status: 'Completed']
+        UpdatePayment --> SendEmail[Dispatch Email Confirmation]
+    end
+
+    subgraph Post_Payment["4. Digital Invoice & Access"]
+        ReconcileData --> ViewMyBookings[Guest Views Confirmed Reservation in My Bookings]
+        ViewMyBookings --> GenInvoice[GET /api/payments/invoice/:id]
+        GenInvoice --> DispInvoice[Generate Digital Tax Invoice<br/>Rate per night in EUR × Nights<br/>12% Occupancy Tax in EUR<br/>Rounding Adjustment + Reconciled Total]
+    end
