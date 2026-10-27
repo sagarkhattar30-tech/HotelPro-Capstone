@@ -77,41 +77,54 @@ app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
 // Database Connection handling with serverless connection pooling & resilience
 let lastDbError = null;
+let cached = global.mongoose;
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
 
 const connectDB = async () => {
-  if (mongoose.connection.readyState === 1) {
-    return;
+  if (cached.conn && mongoose.connection.readyState === 1) {
+    return cached.conn;
   }
-  try {
+
+  if (!cached.promise) {
     const rawUri = (process.env.MONGO_URI || 'mongodb://localhost:27017/hotelpro').trim().replace(/[\r\n]+/g, '');
-    await mongoose.connect(rawUri, {
-      serverSelectionTimeoutMS: 6000
+    cached.promise = mongoose.connect(rawUri, {
+      serverSelectionTimeoutMS: 8000,
+      maxPoolSize: 10
+    }).then(async (m) => {
+      console.log('✅ MongoDB Connected to HotelPro Database');
+      lastDbError = null;
+      return m;
+    }).catch(err => {
+      cached.promise = null;
+      lastDbError = err.message;
+      console.error('❌ Database connection error:', err.message);
+      throw err;
     });
-    console.log('✅ MongoDB Connected to HotelPro Database');
-    lastDbError = null;
-    try {
-      const hotelCount = await Hotel.countDocuments();
-      const roomCount = await Room.countDocuments();
-      if (hotelCount < 4 || roomCount < 8) {
-        console.log('⚡ Initializing database with full luxury hotels, residences and demo data...');
-        await seedDatabase();
-      }
-    } catch (e) {
-      console.warn('Auto-seed check notice:', e.message);
-    }
-  } catch (err) {
-    lastDbError = err.message;
-    console.error('❌ Database connection error:', err.message);
   }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
+  }
+
+  return cached.conn;
 };
 
 // Initial connect
-connectDB();
+connectDB().catch(e => console.warn('Initial connect async notice:', e.message));
 
 // Middleware to ensure DB connection is ready on every serverless invocation
 app.use(async (req, res, next) => {
-  if (mongoose.connection.readyState !== 1 && !req.path.startsWith('/api/stripe')) {
-    await connectDB();
+  if (!req.path.startsWith('/api/stripe')) {
+    try {
+      await connectDB();
+    } catch (e) {
+      console.warn('DB connect middleware notice:', e.message);
+    }
   }
   next();
 });
