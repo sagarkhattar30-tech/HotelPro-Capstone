@@ -77,6 +77,27 @@ app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
 // Database Connection handling with serverless connection pooling & resilience
 let lastDbError = null;
+const sanitizeMongoUri = (raw) => {
+  const fallback = 'mongodb+srv://sagarkhattar30_db_user:Sagar%4016@cluster0.e9g9ft7.mongodb.net/hotelpro?retryWrites=true&w=majority';
+  if (!raw) return fallback;
+  let uri = String(raw).trim().replace(/[\r\n"']/g, '');
+  if (uri.startsWith('MONGO_URI=')) {
+    uri = uri.replace(/^MONGO_URI=\s*/, '');
+  }
+  // Check if someone passed localhost in cloud/Vercel
+  if ((process.env.VERCEL || process.env.NODE_ENV === 'production') && (uri.includes('localhost') || uri.includes('127.0.0.1'))) {
+    return fallback;
+  }
+  // Automatically fix unencoded @ in password
+  const match = uri.match(/^(mongodb(?:\+srv)?:\/\/)([^:]+):(.+?)@([^@]+)$/);
+  if (match) {
+    const [, protocol, user, pass, hostAndQuery] = match;
+    const encodedPass = encodeURIComponent(decodeURIComponent(pass));
+    return `${protocol}${user}:${encodedPass}@${hostAndQuery}`;
+  }
+  return uri || fallback;
+};
+
 let cached = global.mongoose;
 if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
@@ -88,7 +109,7 @@ const connectDB = async () => {
   }
 
   if (!cached.promise) {
-    const rawUri = (process.env.MONGO_URI || 'mongodb://localhost:27017/hotelpro').trim().replace(/[\r\n]+/g, '');
+    const rawUri = sanitizeMongoUri(process.env.MONGO_URI);
     cached.promise = mongoose.connect(rawUri, {
       serverSelectionTimeoutMS: 8000,
       maxPoolSize: 10
